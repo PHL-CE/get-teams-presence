@@ -37,8 +37,7 @@ jobs:
         uses: actions/checkout@main
 
       - name: Read backend file
-        working-directory: ${{ env.WORKING_DIR }}
-        run: cat backends/backend.conf >> ${GITHUB_ENV}
+        run: cat terraform/backends/backend.conf >> ${GITHUB_ENV}
 
       - name: Azure Login
         uses: azure/login@v1
