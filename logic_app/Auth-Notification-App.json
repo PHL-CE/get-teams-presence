@@ -116,7 +116,7 @@
                     }
                   },
                   "method": "get",
-                  "path": "/@{encodeURIComponent(encodeURIComponent([parameters('servicebus_queue_name']))}/messages/head",
+                  "path": "/[parameters('servicebus_queue_name']/messages/head",
                   "queries": {
                     "queueType": "Main"
                   }
