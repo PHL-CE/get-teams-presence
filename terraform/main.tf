@@ -46,5 +46,4 @@ resource "azurerm_template_deployment" "this" {
     "location"     = azurerm_resource_group.this.location
   }, local.arm_params)
   template_body = data.template_file.workflow.template
-  tags = local.common_tags
 }
