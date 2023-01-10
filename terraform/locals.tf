@@ -14,7 +14,7 @@ locals {
         "Frequency" = "Minute"
         "Interval" = 1
         "owner_Tag" = local.common_tags.Owner
-        "office365_name" = var.email
+        "office365_name" = "Office365"
         "office365_displayName" = var.email
         "servicebus_name" = azurerm_servicebus_queue.this.name
         "servicebus_displayName" = azurerm_servicebus_queue.this.name
