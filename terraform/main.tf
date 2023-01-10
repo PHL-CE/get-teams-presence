@@ -36,14 +36,14 @@ resource "azurerm_logic_app_workflow" "this" {
 }
 
 // Deploy the ARM template workflow
-resource "azurerm_template_deployment" "this" {
+resource "azurerm_resource_group_template_deployment" "this" {
   depends_on = [azurerm_logic_app_workflow.this]
   name = "${local.name_prefix}-deployment"
   resource_group_name = azurerm_resource_group.this.name
   deployment_mode = "Incremental"
-  parameters = merge({
+  parameters_content = merge({
     "workflowName" = azurerm_logic_app_workflow.this.name
     "location"     = azurerm_resource_group.this.location
   }, local.arm_params)
-  template_body = data.template_file.workflow.template
+  template_content = data.template_file.workflow.template
 }

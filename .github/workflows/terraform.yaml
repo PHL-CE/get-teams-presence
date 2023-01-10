@@ -144,7 +144,7 @@ jobs:
     name: Copy, Build and Deploy Docker Container
     runs-on: ubuntu-latest
     needs: terraform
-    if: inputs.tf_action != 'destroy'
+    if: inputs.tf_action == 'apply'
 
     env: 
       DEST_DIR: programs
