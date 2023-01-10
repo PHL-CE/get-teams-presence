@@ -9,7 +9,7 @@ on:
       #   type: environment
       #   required: true                
       #   default: 'development'
-      terraform_action:
+      tf_action:
         description: 'The action terraform should apply'
         type: choice
         options:
