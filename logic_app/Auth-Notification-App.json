@@ -68,6 +68,10 @@
         "type": "string",
         "defaultValue": "Auth-Notification-SB"
       },
+      "servicebus_queue_name": {
+        "type": "string",
+        "defaultValue": "authqueue"
+      },
       "servicebus_resourceGroupName": {
         "type": "string",
         "defaultValue": "REPLACE__servicebus_rg"
@@ -112,7 +116,7 @@
                     }
                   },
                   "method": "get",
-                  "path": "/@{encodeURIComponent(encodeURIComponent('authqueue'))}/messages/head",
+                  "path": "/@{encodeURIComponent(encodeURIComponent([parameters('servicebus_queue_name']))}/messages/head",
                   "queries": {
                     "queueType": "Main"
                   }

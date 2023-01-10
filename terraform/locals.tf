@@ -14,11 +14,12 @@ locals {
         "Frequency" = "Minute"
         "Interval" = 1
         "owner_Tag" = local.common_tags.Owner
-        "office365_name" = "office365"
+        "office365_name" = var.email
         "office365_displayName" = var.email
         "servicebus_name" = azurerm_servicebus_queue.this.name
         "servicebus_displayName" = azurerm_servicebus_queue.this.name
         "servicebus_namespace_name" = azurerm_servicebus_namespace.this.name
+        "servicebus_queue_name" = azurerm_servicebus_queue.this.name
         "servicebus_resourceGroupName" = azurerm_servicebus_namespace.this.resource_group_name
         "servicebus_accessKey_name" = "RootManageSharedAccessKey"
     }
