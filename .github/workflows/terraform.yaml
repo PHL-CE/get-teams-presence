@@ -82,7 +82,7 @@ jobs:
 
       - name: Read backend file
         working-directory: ${{ env.WORKING_DIR }}
-        run: cat backends/${{ inputs.build_env }}.conf >> ${GITHUB_ENV}
+        run: cat backends/backend.conf >> ${GITHUB_ENV}
 
       - name: Azure Login
         uses: azure/login@v1
