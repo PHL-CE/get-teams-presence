@@ -8,7 +8,7 @@ locals {
         Project = "InnovationLab"
     }
 
-    arm_file_path = "../Azure/Auth-Notification-App.json"
+    arm_file_path = "../logic_app/Auth-Notification-App.json"
     arm_params = {
         "logicAppName" = "Auth-Notification-LogicApp"
         "When_a_message_is_received_in_a_queue_(auto-complete)Frequency" = "Minute"
