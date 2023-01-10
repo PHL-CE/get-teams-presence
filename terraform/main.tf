@@ -35,12 +35,6 @@ resource "azurerm_logic_app_workflow" "this" {
   tags                = local.common_tags
 }
 
-// Deploy the ARM template to configure the workflow in the Logic App
-
-data "template_file" "workflow" {
-  template = file(local.arm_file_path)
-}
-
 // Deploy the ARM template workflow
 resource "azurerm_template_deployment" "this" {
   depends_on = [azurerm_logic_app_workflow.this]

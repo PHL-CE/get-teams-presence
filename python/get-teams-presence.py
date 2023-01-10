@@ -1,8 +1,6 @@
 import os
 import sys
 import json
-import webbrowser
-import pyperclip
 import requests
 import msal
 import atexit
@@ -12,10 +10,16 @@ import socket
 from azure.servicebus import ServiceBusClient, ServiceBusMessage
 from sense_hat import SenseHat
 
-logging.basicConfig(filename='presence.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(filename='logs/presence.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# Import config
-config = json.load(open('Azure/config.json'))
+### GLOBAL VARIABLES ###
+authority = "https://login.microsoftonline.com/common"
+endpoint = "https://graph.microsoft.com/beta/me/presence"
+scope = ["Presence.Read"]
+client_id = os.getenv('client_id')
+email = os.getenv('email')
+sb_conn_string = os.getenv('sb_conn_string')
+queue_name = os.getenv('authqueue')
 
 # Sense Hat stuff:
 sense = SenseHat()
@@ -32,8 +36,8 @@ atexit.register(lambda:
 
 # Establish GRAPH connection via MSAL auth library
 app = msal.PublicClientApplication(
-    config['client_id'], 
-    authority=config['authority'],
+    client_id, 
+    authority=authority,
     token_cache=cache
     )
 
@@ -46,45 +50,35 @@ def checkAuth ():
         # Assume only one account and get first one
         account = accounts[0]
         # Now let's try to find a token in cache for this account
-        result = app.acquire_token_silent(config['scope'], account=account)
+        result = app.acquire_token_silent(scope, account=account)
 
     # If no accounts with valid token found in cache, prompt user to log in again and get new
     if not result:
         logging.info("No suitable token exists in cache. Let's get a new one from AAD.")
 
-        flow = app.initiate_device_flow(scopes=config['scope'])
+        flow = app.initiate_device_flow(scopes=scope)
         if 'user_code' not in flow:
             e = f'Failed to create device flow. Err: {json.dumps(flow, indent=4)}'
             logging.error(e)
             raise ValueError(e)
         else:
-            # If [email] is included in config file, go through Azure SB/LA notification flow
-            if config['email']:
-                msg = {}
-                msg['message'] = (
-                    f'Auth Token for {sys.argv[0]} on {socket.gethostname()} is not valid or unavailable. '
-                    'Please follow the link below and paste in the following code to generate a new token.'
-                )
-                msg['email'] = config['email']
-                msg['user_code'] = flow['user_code']
-                msg['verification_uri'] = flow['verification_uri']
-                msg_formatted = str(json.dumps(msg))
-                message = ServiceBusMessage(msg_formatted)
-                try:
-                    with ServiceBusClient.from_connection_string(config['sb_conn_string']) as client:
-                        with client.get_queue_sender(config['queue_name']) as sender:
-                            sender.send_messages(message)
-                            logging.info('Message sent to SB Queue successfully - check email for auth code.')
-                except Exception as e:
-                    logging.info(f'Error sending message to SB Queue : {e}')
-            # If [email] not included in config file, assume user will manually intervene on device, and open browser
-            else:
-                pyperclip.copy(flow['user_code']) # copy user code to clipboard
-                webbrowser.open(flow['verification_uri']) # open browser
-                logging.info(
-                    'The code %s has been copied to your clipboard, and your web browser is opening %s. '
-                    'Paste the code to sign in.', flow['user_code'], flow['verification_uri']
-                )
+            msg = {}
+            msg['message'] = (
+                f'Auth Token for {sys.argv[0]} on {socket.gethostname()} is not valid or unavailable. '
+                'Please follow the link below and paste in the following code to generate a new token.'
+            )
+            msg['email'] = email
+            msg['user_code'] = flow['user_code']
+            msg['verification_uri'] = flow['verification_uri']
+            msg_formatted = str(json.dumps(msg))
+            message = ServiceBusMessage(msg_formatted)
+            try:
+                with ServiceBusClient.from_connection_string(sb_conn_string) as client:
+                    with client.get_queue_sender(queue_name) as sender:
+                        sender.send_messages(message)
+                        logging.info('Message sent to SB Queue successfully - check email for auth code.')
+            except Exception as e:
+                logging.info(f'Error sending message to SB Queue : {e}')
         
         return app.acquire_token_by_device_flow(flow)
 
@@ -102,7 +96,7 @@ def getPresence ():
     if 'access_token' in auth_result:
         # Calling graph using the access token
         graph_data = requests.get(  # Use token to call downstream service
-            config['endpoint'],
+            endpoint,
             headers={'Authorization': 'Bearer ' + auth_result['access_token']},).json()
     else:
         logging.error(auth_result.get('error'))

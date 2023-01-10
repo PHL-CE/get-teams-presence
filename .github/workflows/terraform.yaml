@@ -23,20 +23,15 @@ permissions:
   id-token: write
   contents: read
 
-env:
-  WORKING_DIR: terraform
-  ARM_USE_OIDC: true
-  ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-  ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-  ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-  STATE_STG_LOC: eastus2
-  TF_VERSION: 1.3.0
-
 jobs:
   storage-acct:
     name: "Create Storage Account if not exists"
     runs-on: ubuntu-latest
     # environment: ${{ inputs.build_env }}
+
+    env:
+      STATE_STG_LOC: eastus2
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@main
@@ -64,10 +59,23 @@ jobs:
   
   
   terraform:
-
     name: "Terraform Build"
     needs: [storage-acct]
     runs-on: ubuntu-latest
+    
+    outputs: 
+      SB_CONN_STRING: ${{ steps.outputs.outputs.SB_CONN_STRING }}
+      QUEUE_NAME: ${{ steps.outputs.outputs.QUEUE_NAME }}
+      CLIENT_ID: ${{ steps.outputs.outputs.CLIENT_ID }}
+      EMAIL: ${{ steps.outputs.outputs.EMAIL }}
+    
+    env:
+      WORKING_DIR: terraform
+      ARM_USE_OIDC: true
+      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      TF_VERSION: 1.3.0
 
     steps:
       - name: Checkout Repository
@@ -123,3 +131,67 @@ jobs:
         working-directory: ${{ env.WORKING_DIR }}
         if: inputs.tf_action == 'destroy'
         run: terraform destroy -var-file=vars/${{ inputs.build_env }}.tfvars -auto-approve
+
+      - name: Capture Terraform Outputs
+        id: outputs
+        working-directory: ${{ env.WORKING_DIR }}
+        run: |
+          echo "SB_CONN_STRING=$(terraform output SB_CONN_STRING)" >> $GITHUB_OUTPUT
+          echo "QUEUE_NAME=$(terraform output QUEUE_NAME)" >> $GITHUB_OUTPUT
+          echo "CLIENT_ID=$(terraform output CLIENT_ID)" >> $GITHUB_OUTPUT
+          echo "EMAIL=$(terraform output EMAIL)" >> $GITHUB_OUTPUT
+
+  deploy-app:
+    name: Copy, Build and Deploy Docker Container
+    runs-on: ubuntu-latest
+    needs: terraform
+    if: inputs.tf_action != 'destroy'
+
+    env: 
+      DEST_DIR: programs
+      FILENAME: get-teams-presence
+      RESTART_POLICY: unless-stopped
+      LOG_VOLUME: gtp-logs
+
+    steps:
+    - name: Checkout Repo
+      uses: actions/checkout@v3
+    
+    - name: Remove Existing Project Files
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        password: ${{ secrets.PASSWORD }}
+        port: ${{ secrets.PORT }}
+        script: rm -r ~/${{ env.DEST_DIR }}/${{ env.FILENAME }}
+
+    - name: Copy Project to Host
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        password: ${{ secrets.PASSWORD }}
+        port: ${{ secrets.PORT }}
+        source: "./"
+        target: "~/${{ env.DEST_DIR }}/${{ env.FILENAME }}"
+
+    - name: Build and Redeploy Docker Container on Host
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.KEY }}
+        port: ${{ secrets.PORT }}
+        script: |
+          docker build --tag ${{ env.FILENAME }} ~/${{ env.DEST_DIR }}/${{ env.FILENAME }}/.
+          (docker stop ${{ env.FILENAME }} || true) && \
+          (docker rm ${{ env.FILENAME }} || true) && \
+          docker run -d \
+            --name ${{ env.FILENAME }} ${{ env.FILENAME }}:latest \
+            --volume ${{ env.LOG_VOLUME }}:/gtp/logs \
+            --restart=${{ env.RESTART_POLICY }} \
+            --build-arg sb_conn_string=${{needs.terraform.outputs.SB_CONN_STRING}} \
+            --build-arg queue_name=${{needs.terraform.outputs.QUEUE_NAME}} \
+            --build-arg client_id=${{needs.terraform.outputs.CLIENT_ID}} \
+            --build-arg email=${{needs.terraform.outputs.EMAIL}} 
