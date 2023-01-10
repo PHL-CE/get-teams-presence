@@ -23,6 +23,8 @@ on:
         options:
           - rebuild
           - nobuild
+        required: true
+        default: 'nobuild'
 
 permissions:
   id-token: write
