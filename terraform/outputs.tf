@@ -8,7 +8,7 @@ output "QUEUE_NAME" {
 }
 
 output "CLIENT_ID" {
-    value = data.azurerm_client_config.current.client_id
+    value = data.azuread_application.this.application_id
 }
 
 output "EMAIL" {

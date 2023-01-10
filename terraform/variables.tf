@@ -5,3 +5,7 @@
 variable "email" {
     type = string
 }
+
+variable "ad_app_name" {
+    type = string
+}
