@@ -1,5 +1,5 @@
 locals {
-    name_prefix = "auth-check"
+    name_prefix = "auth-note"
     location = "eastus2"
     common_tags = {
         Owner = "Pat Lafferty"

@@ -5,7 +5,7 @@ resource "azurerm_resource_group" "this" {
 }
 
 resource "azurerm_servicebus_namespace" "this" {
-  name                = "${local.name_prefix}-sb"
+  name                = "${local.name_prefix}-bus"
   location            = azurerm_resource_group.this.location
   resource_group_name = azurerm_resource_group.this.name
   sku                 = "Standard"
@@ -43,7 +43,7 @@ resource "azurerm_template_deployment" "this" {
   parameters = merge({
     "workflowName" = azurerm_logic_app_workflow.this.name
     "location"     = azurerm_resource_group.this.location
-  }, var.parameters)
+  }, local.arm_params)
 
   template_body = data.template_file.workflow.template
 }
