@@ -1,5 +1,5 @@
 locals {
-    name_prefix = "auth-note"
+    name_prefix = "auth-notification"
     location = "eastus2"
     common_tags = {
         Owner = "Pat Lafferty"
@@ -10,16 +10,16 @@ locals {
 
     arm_file_path = "../logic_app/Auth-Notification-App.json"
     arm_params = {
-        "logicAppName" = "Auth-Notification-LogicApp"
-        "When_a_message_is_received_in_a_queue_(auto-complete)Frequency" = "Minute"
-        "When_a_message_is_received_in_a_queue_(auto-complete)Interval" = 1
-        "owner_Tag" = "patlaff728@gmail.com"
+        "logicAppName" = azurerm_logic_app_workflow.this.name
+        "Frequency" = "Minute"
+        "Interval" = 1
+        "owner_Tag" = local.common_tags.Owner
         "office365_name" = "office365"
-        "office365_displayName" = "patlaff728@gmail.com"
-        "servicebus_name" = "servicebus"
-        "servicebus_displayName" = "Auth-Notification-Queue"
-        "servicebus_namespace_name" = "Auth-Notification-Queue"
-        "servicebus_resourceGroupName" = "Auth-Notification"
+        "office365_displayName" = var.email
+        "servicebus_name" = azurerm_servicebus_queue.this.name
+        "servicebus_displayName" = azurerm_servicebus_queue.this.name
+        "servicebus_namespace_name" = azurerm_servicebus_namespace.this.name
+        "servicebus_resourceGroupName" = azurerm_servicebus_namespace.this.resource_group_name
         "servicebus_accessKey_name" = "RootManageSharedAccessKey"
     }
 }
