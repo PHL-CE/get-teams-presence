@@ -18,6 +18,11 @@ on:
           - destroy
         required: true
         default: 'plan'
+      build_container:
+        type: choice
+        options:
+          - rebuild
+          - nobuild
 
 permissions:
   id-token: write
@@ -174,8 +179,18 @@ jobs:
         port: ${{ secrets.PORT }}
         source: "./"
         target: "~/${{ env.DEST_DIR }}/${{ env.FILENAME }}"
+    
+    - name : Build Docker Container on Host
+      if: inputs.build_container == 'rebuild'
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        password: ${{ secrets.PASSWORD }}
+        port: ${{ secrets.PORT }}
+        script: docker build --tag ${{ env.FILENAME }} ~/${{ env.DEST_DIR }}/${{ env.FILENAME }}/.
 
-    - name: Build and Redeploy Docker Container on Host
+    - name: Start Docker Container on Host
       uses: appleboy/ssh-action@master
       with:
         host: ${{ secrets.HOST }}
@@ -183,7 +198,6 @@ jobs:
         password: ${{ secrets.PASSWORD }}
         port: ${{ secrets.PORT }}
         script: |
-          docker build --tag ${{ env.FILENAME }} ~/${{ env.DEST_DIR }}/${{ env.FILENAME }}/.
           (docker stop ${{ env.FILENAME }} || true) && \
           (docker rm ${{ env.FILENAME }} || true) && \
           docker run -d \
