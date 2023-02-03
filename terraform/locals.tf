@@ -15,7 +15,7 @@ locals {
         "Interval" = 1
         "owner_Tag" = local.common_tags.Owner
         "office365_name" = "Office365"
-        "office365_displayName" = var.email
+        "office365_displayName" = "Email_Connection"
         "servicebus_name" = azurerm_servicebus_queue.this.name
         "servicebus_displayName" = azurerm_servicebus_queue.this.name
         "servicebus_namespace_name" = azurerm_servicebus_namespace.this.name

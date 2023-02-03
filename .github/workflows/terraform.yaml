@@ -1,5 +1,5 @@
 name: Get Teams Presence Terraform Pipeline
-run-name: Get Teams Presence Terraform ${{ inputs.terraform_action }} by ${{ github.actor }}
+run-name: Get Teams Presence - Terraform ${{ inputs.tf_action }}, Docker ${{ inputs.build_container }} by ${{ github.actor }}
 
 on:
   workflow_dispatch:

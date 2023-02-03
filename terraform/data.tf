@@ -3,7 +3,3 @@ data "template_file" "workflow" {
 }
 
 data "azurerm_client_config" "current" {}
-
-data "azuread_application" "this" {
-  display_name = var.ad_app_name
-}
