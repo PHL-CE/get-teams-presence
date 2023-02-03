@@ -116,25 +116,25 @@ jobs:
       - name: Terraform Plan Apply
         id: plan-apply
         working-directory: ${{ env.WORKING_DIR }}
-        run: terraform plan -var-file=vars/vars.tfvars
+        run: terraform plan #-var-file=vars/vars.tfvars
 
       - name: Terraform Apply
         id: apply
         working-directory: ${{ env.WORKING_DIR }}
         if: inputs.tf_action == 'apply'
-        run: terraform apply -var-file=vars/vars.tfvars -auto-approve
+        run: terraform apply -auto-approve #-var-file=vars/vars.tfvars 
 
       - name: Terraform Plan Destroy
         id: plan-destroy
         working-directory: ${{ env.WORKING_DIR }}
         if: inputs.tf_action == 'destroy'
-        run: terraform plan -destroy -var-file=vars/vars.tfvars
+        run: terraform plan -destroy #-var-file=vars/vars.tfvars
 
       - name: Terraform Destroy
         id: destroy
         working-directory: ${{ env.WORKING_DIR }}
         if: inputs.tf_action == 'destroy'
-        run: terraform destroy -var-file=vars/vars.tfvars -auto-approve
+        run: terraform destroy -auto-approve #-var-file=vars/vars.tfvars 
 
       - name: Capture Terraform Outputs
         id: outputs
