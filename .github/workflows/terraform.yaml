@@ -144,8 +144,6 @@ jobs:
         run: |
           echo "SB_CONN_STRING=$(terraform output SB_CONN_STRING)" >> $GITHUB_OUTPUT
           echo "QUEUE_NAME=$(terraform output QUEUE_NAME)" >> $GITHUB_OUTPUT
-          echo "CLIENT_ID=$(terraform output CLIENT_ID)" >> $GITHUB_OUTPUT
-          echo "EMAIL=$(terraform output EMAIL)" >> $GITHUB_OUTPUT
 
   deploy-app:
     name: Copy, Build and Deploy Docker Container
@@ -162,6 +160,10 @@ jobs:
     steps:
     - name: Checkout Repo
       uses: actions/checkout@v3
+
+    - name: Read backend file
+        working-directory: ${{ env.WORKING_DIR }}
+        run: cat conf/vars.conf >> ${GITHUB_ENV}
     
     - name: Remove Existing Project Files
       uses: appleboy/ssh-action@master
@@ -190,7 +192,14 @@ jobs:
         username: ${{ secrets.USERNAME }}
         password: ${{ secrets.PASSWORD }}
         port: ${{ secrets.PORT }}
-        script: docker build --tag ${{ env.FILENAME }} ~/${{ env.DEST_DIR }}/${{ env.FILENAME }}/.
+        script: |
+          docker build \
+          --tag ${{ env.FILENAME }} \
+          ~/${{ env.DEST_DIR }}/${{ env.FILENAME }}/.
+          --build-arg sb_conn_string=${{needs.terraform.outputs.SB_CONN_STRING}} \
+          --build-arg queue_name=${{needs.terraform.outputs.QUEUE_NAME}} \
+          --build-arg client_id=${{ env.CLIENT_ID }} \
+          --build-arg email=${{ env.EMAIL }}
 
     - name: Start Docker Container on Host
       uses: appleboy/ssh-action@master
@@ -203,10 +212,6 @@ jobs:
           (docker stop ${{ env.FILENAME }} || true) && \
           (docker rm ${{ env.FILENAME }} || true) && \
           docker run -d \
-            --name ${{ env.FILENAME }} ${{ env.FILENAME }}:latest \
             --volume ${{ env.LOG_VOLUME }}:/gtp/logs \
             --restart=${{ env.RESTART_POLICY }} \
-            --build-arg sb_conn_string=${{needs.terraform.outputs.SB_CONN_STRING}} \
-            --build-arg queue_name=${{needs.terraform.outputs.QUEUE_NAME}} \
-            --build-arg client_id=${{needs.terraform.outputs.CLIENT_ID}} \
-            --build-arg email=${{needs.terraform.outputs.EMAIL}} 
+            --name ${{ env.FILENAME }} ${{ env.FILENAME }}:latest

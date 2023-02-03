@@ -35,4 +35,4 @@ ENV email=$email
 ENV sb_conn_string=$sb_conn_string
 ENV queue_name=$queue_name
 
-CMD ["python3", "get_msgraph_presence.py"]
+CMD ["python3", "get-teams-presence.py"]

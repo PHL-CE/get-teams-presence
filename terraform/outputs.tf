@@ -6,11 +6,3 @@ output "SB_CONN_STRING" {
 output "QUEUE_NAME" {
     value = azurerm_servicebus_queue.this.name
 }
-
-output "CLIENT_ID" {
-    value = data.azuread_application.this.application_id
-}
-
-output "EMAIL" {
-    value = var.email
-}
