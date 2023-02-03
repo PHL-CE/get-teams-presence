@@ -72,8 +72,6 @@ jobs:
     outputs: 
       SB_CONN_STRING: ${{ steps.outputs.outputs.SB_CONN_STRING }}
       QUEUE_NAME: ${{ steps.outputs.outputs.QUEUE_NAME }}
-      CLIENT_ID: ${{ steps.outputs.outputs.CLIENT_ID }}
-      EMAIL: ${{ steps.outputs.outputs.EMAIL }}
     
     env:
       WORKING_DIR: terraform
@@ -162,8 +160,7 @@ jobs:
       uses: actions/checkout@v3
 
     - name: Read backend file
-        working-directory: ${{ env.WORKING_DIR }}
-        run: cat conf/vars.conf >> ${GITHUB_ENV}
+      run: cat conf/vars.conf >> ${GITHUB_ENV}
     
     - name: Remove Existing Project Files
       uses: appleboy/ssh-action@master
